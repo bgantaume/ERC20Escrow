@@ -5,14 +5,16 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract Escrow { 
-    bool released = false;
-    IERC20 token;
+    IERC20 private token;
+    uint256 private lockedIn = 0;
+    bool private released = false;
 
     constructor(address _token) {
         token = IERC20(_token);
     }
 
     function lock(address recipient, uint256 amount) external {
+        lockedIn = amount;
         token.transferFrom(msg.sender, address(this), amount);
     }
 
@@ -20,11 +22,14 @@ contract Escrow {
         released = true;
     }
 
-    function lockedInBalance(address account) external view returns (uint256) {
-        return 0;
+    function lockedInBalance(address sender, address recipient) external view returns (uint256) {
+        return lockedIn;
     }
 
-    function claimableBalance(address account) external view returns (uint256) {
+    function claimableBalance(address recipient) external view returns (uint256) {
+        if (released) {
+            return lockedIn;
+        }
         return 0;
     }
 

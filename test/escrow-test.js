@@ -37,6 +37,8 @@ describe("Escrow", function () {
         await b42Token.connect(buyer).approve(escrow.address, onehundred);
         await escrow.connect(buyer).lock(merchant.address, onehundred);
 
+        expect(await escrow.lockedInBalance(buyer.address,merchant.address)).to.equal(onehundred);
+
         expect(await b42Token.balanceOf(buyer.address)).to.equal(initial_buyer_balance - onehundred);
         expect(await b42Token.balanceOf(escrow.address)).to.equal(initial_escrow_balance + onehundred);
     });
@@ -44,6 +46,21 @@ describe("Escrow", function () {
     // check that the amout of tokens is enough
     // check that the spending limit of tokens is enough
 
+  })
+
+  describe("release", function() {
+    it("should credit the merchant balance", async function() {
+        await b42Token.connect(buyer).approve(escrow.address, onehundred);
+        await escrow.connect(buyer).lock(merchant.address, onehundred);
+
+        expect(await escrow.claimableBalance(merchant.address)).to.equal(0);
+        await escrow.connect(buyer).release(merchant.address, onehundred);
+        expect(await escrow.claimableBalance(merchant.address)).to.equal(onehundred);
+
+    });
+
+    // check that the amout of tokens is enough
+ 
   })
 
   describe("claim", function() {
