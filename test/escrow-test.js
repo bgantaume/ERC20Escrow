@@ -29,7 +29,7 @@ describe("Escrow", function () {
     initial_buyer2_balance = await b42Token.balanceOf(buyer2.address);
     initial_merchant2_balance = await b42Token.balanceOf(merchant2.address);
     initial_escrow_balance = await b42Token.balanceOf(escrow.address);
-    
+
     await b42Token.connect(buyer).approve(escrow.address, onehundred);
     await b42Token.connect(buyer2).approve(escrow.address, onehundred);
 
@@ -57,22 +57,22 @@ describe("Escrow", function () {
       try {
         await escrow.connect(buyer).lock(merchant.address, ethers.utils.parseEther("1000"));
         throw("This should not work !");
-      } catch (err) {  
+      } catch (err) {
         expect(err.message).to.eq("VM Exception while processing transaction: reverted with reason string 'Insufficient balance'");
-      } 
+      }
         expect(await escrow.lockedInBalance(buyer.address,merchant.address))
           .to.equal(ethers.utils.parseEther("0"));
     });
 
     it("should check the escrow is authorized", async function() {
       await b42Token.connect(buyer).approve(escrow.address, ethers.utils.parseEther("10"));
-    
+
       try {
         await escrow.connect(buyer).lock(merchant.address, ethers.utils.parseEther("100"));
         throw("This should not work !");
-      } catch (err) {  
+      } catch (err) {
         expect(err.message).to.eq("VM Exception while processing transaction: reverted with reason string 'Escrow not authorized'");
-      } 
+      }
         expect(await escrow.lockedInBalance(buyer.address,merchant.address))
           .to.equal(ethers.utils.parseEther("0"));
     });
@@ -84,9 +84,9 @@ describe("Escrow", function () {
       await escrow.connect(buyer).lock(merchant.address, onehundred);
 
       expect(await escrow.claimableBalance(merchant.address)).to.equal(0);
-      
+
       await escrow.connect(buyer).release(merchant.address);
-      
+
       expect(await escrow.claimableBalance(merchant.address)).to.equal(onehundred);
     });
 
@@ -97,7 +97,7 @@ describe("Escrow", function () {
       await escrow.connect(buyer).release(merchant.address);
 
       expect(await escrow.claimableBalance(merchant.address)).to.equal(onehundred);
-      expect(await escrow.claimableBalance(merchant2.address)).to.equal(0);      
+      expect(await escrow.claimableBalance(merchant2.address)).to.equal(0);
     });
 
     it("should allow to release only once", async function() {
@@ -123,15 +123,15 @@ describe("Escrow", function () {
   })
 
   describe("claim", function() {
-    it("transfer the funds after being approved transaction", async function () {    
+    it("transfer the funds after being approved transaction", async function () {
       await escrow.connect(buyer).lock(merchant.address, onehundred);
       await escrow.connect(buyer).release(merchant.address);
       await escrow.connect(merchant).claim();
-  
+
       expect(await b42Token.balanceOf(merchant.address)).to.equal(initial_merchant_balance + onehundred);
     });
 
-    it("should allow to claim only once", async function () {    
+    it("should allow to claim only once", async function () {
       await escrow.connect(buyer).lock(merchant.address, onehundred);
       await escrow.connect(buyer2).lock(merchant2.address, onehundred);
       await escrow.connect(buyer).release(merchant.address);
@@ -139,14 +139,14 @@ describe("Escrow", function () {
 
       await escrow.connect(merchant).claim();
       await escrow.connect(merchant).claim();
-  
+
       expect(await b42Token.balanceOf(merchant.address)).to.equal(initial_merchant_balance + onehundred);
     });
 
       it("should not release before buyer's approval", async function () {
         await escrow.connect(buyer).lock(merchant.address, onehundred);
         await escrow.connect(merchant).claim();
-    
+
         expect(await b42Token.balanceOf(merchant.address)).to.equal(initial_merchant_balance);
       });
       // Should check allowed amount
@@ -154,5 +154,5 @@ describe("Escrow", function () {
 
   })
 
- 
+
  });

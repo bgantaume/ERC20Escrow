@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract Escrow { 
+contract Escrow {
     IERC20 private token;
 
     mapping(address => mapping(address => uint256)) lockedIn;
