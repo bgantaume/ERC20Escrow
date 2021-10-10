@@ -2,6 +2,7 @@
 const { expect, assert } = require("chai");
 const { ethers } = require("hardhat");
 const { BigNumber } = require("@ethersproject/bignumber");
+const { smockit } = require("@eth-optimism/smock");
 
 describe("Escrow", function () {
   let admin, buyer, buyer2, merchant;
@@ -26,8 +27,6 @@ describe("Escrow", function () {
 
     initial_buyer_balance = await b42Token.balanceOf(buyer.address);
     initial_merchant_balance = await b42Token.balanceOf(merchant.address);
-    initial_buyer2_balance = await b42Token.balanceOf(buyer2.address);
-    initial_merchant2_balance = await b42Token.balanceOf(merchant2.address);
     initial_escrow_balance = await b42Token.balanceOf(escrow.address);
 
     await b42Token.connect(buyer).approve(escrow.address, onehundred);
@@ -56,7 +55,7 @@ describe("Escrow", function () {
     it("should check there is enough balance", async function() {
       try {
         await escrow.connect(buyer).lock(merchant.address, ethers.utils.parseEther("1000"));
-        throw("This should not work !");
+        throw new Error("This should not work !");
       } catch (err) {
         expect(err.message).to.eq("VM Exception while processing transaction: reverted with reason string 'Insufficient balance'");
       }
@@ -69,7 +68,7 @@ describe("Escrow", function () {
 
       try {
         await escrow.connect(buyer).lock(merchant.address, ethers.utils.parseEther("100"));
-        throw("This should not work !");
+        throw new Error("This should not work !");
       } catch (err) {
         expect(err.message).to.eq("VM Exception while processing transaction: reverted with reason string 'Escrow not authorized'");
       }
@@ -149,8 +148,27 @@ describe("Escrow", function () {
 
         expect(await b42Token.balanceOf(merchant.address)).to.equal(initial_merchant_balance);
       });
-      // Should check allowed amount
-      // Should chech the sender
+
+      it("should be able to use a mock", async function() {
+        const MyMockContract = await smockit(b42Token);
+        MyMockContract.smocked.transfer.will.return.with(false);
+
+        await b42Token.connect(buyer).transfer(merchant.address, onehundred);
+        expect(MyMockContract.smocked.transfer.calls.length).to.eq(1);
+      });
+
+      it("should check the transfer worked fine", async function() {
+        await escrow.connect(buyer).lock(merchant.address, onehundred);
+        await escrow.connect(buyer).release(merchant.address);
+
+        try {
+          await escrow.connect(merchant).claim();
+          throw new Error("This should not work !");
+        } catch (err) {
+          expect(err.message).to.eq("VM Exception while processing transaction: reverted with reason string 'Could not transfer merchant's balance'");
+        }
+      });
+
 
   })
 

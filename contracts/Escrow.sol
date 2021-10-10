@@ -43,7 +43,7 @@ contract Escrow {
             released[msg.sender] = 0;
 
             // Todo : test the require
-            require(token.transfer(msg.sender, amount), "Could not tranfer merchant's balance");
+            require(token.transfer(msg.sender, amount), "Could not transfer merchant's balance");
         }
     }
 
