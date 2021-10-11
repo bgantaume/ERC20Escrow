@@ -18,7 +18,6 @@ contract Escrow {
         require(token.balanceOf(msg.sender) >= amount, 'Insufficient balance');
         require(token.allowance(msg.sender, address(this)) >= amount, 'Escrow not authorized');
 
-        // Todo : test the require
         require(token.transferFrom(msg.sender, address(this), amount), "Could not tranfer tokens");
         lockedIn[msg.sender][recipient] += amount;
     }
@@ -41,9 +40,7 @@ contract Escrow {
         uint256 amount = released[msg.sender];
         if (amount > 0) {
             released[msg.sender] = 0;
-
-            // Todo : test the require
-            require(token.transfer(msg.sender, amount), "Could not tranfer merchant's balance");
+            require(token.transfer(msg.sender, amount), "Could not transfer merchant's balance");
         }
     }
 
