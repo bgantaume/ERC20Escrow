@@ -1,8 +1,10 @@
-
-const { expect, assert } = require("chai");
+const chai = require("chai");
+const expect = chai.expect;
 const { ethers } = require("hardhat");
+const { smock } = require("@defi-wonderland/smock");
 const { BigNumber } = require("@ethersproject/bignumber");
-const { smockit } = require("@eth-optimism/smock");
+
+chai.use(smock.matchers);
 
 describe("Escrow", function () {
   let admin, buyer, buyer2, merchant;
@@ -11,6 +13,12 @@ describe("Escrow", function () {
   const onehundred = ethers.utils.parseEther("100");
 
   let initial_buyer_balance, initial_merchant_balance, initial_escrow_balance;
+
+  async function initializeEscrow(tokenAddress) {
+    const Escrow = await ethers.getContractFactory("Escrow");
+    escrow = await Escrow.deploy(tokenAddress);
+    await escrow.deployed();
+  }
 
   beforeEach(async function () {
     [admin, buyer, merchant, buyer2, merchant2] = await ethers.getSigners();
@@ -21,9 +29,7 @@ describe("Escrow", function () {
     await b42Token.mint(buyer.address, onehundred);
     await b42Token.mint(buyer2.address, onehundred);
 
-    const Escrow  = await ethers.getContractFactory("Escrow");
-    escrow = await Escrow.deploy(b42Token.address);
-    await escrow.deployed();
+    await initializeEscrow(b42Token.address)
 
     initial_buyer_balance = await b42Token.balanceOf(buyer.address);
     initial_merchant_balance = await b42Token.balanceOf(merchant.address);
@@ -75,6 +81,26 @@ describe("Escrow", function () {
         expect(await escrow.lockedInBalance(buyer.address,merchant.address))
           .to.equal(ethers.utils.parseEther("0"));
     });
+
+    it("should check the transferFrom worked fine", async function() {
+      const MockFactory = await smock.mock('B42Token');
+      const mock = await MockFactory.deploy();
+      await mock.mint(buyer.address, onehundred);
+
+      await initializeEscrow(mock.address);
+
+      await mock.connect(buyer).approve(escrow.address, onehundred);
+
+      try {
+        mock.transferFrom.returns(false);
+        await escrow.connect(buyer).lock(merchant.address, onehundred);
+        throw new Error("This should not work !");
+      } catch (err) {
+        expect(err.message).to.eq("VM Exception while processing transaction: reverted with reason string 'Could not tranfer tokens'");
+      }
+
+   });
+
 
   })
 
@@ -149,25 +175,27 @@ describe("Escrow", function () {
         expect(await b42Token.balanceOf(merchant.address)).to.equal(initial_merchant_balance);
       });
 
-      it("should be able to use a mock", async function() {
-        const MyMockContract = await smockit(b42Token);
-        MyMockContract.smocked.transfer.will.return.with(false);
-
-        await b42Token.connect(buyer).transfer(merchant.address, onehundred);
-        expect(MyMockContract.smocked.transfer.calls.length).to.eq(1);
-      });
-
       it("should check the transfer worked fine", async function() {
+        const MockFactory = await smock.mock('B42Token');
+        const mock = await MockFactory.deploy();
+        await mock.mint(buyer.address, onehundred);
+
+        await initializeEscrow(mock.address);
+
+        await mock.connect(buyer).approve(escrow.address, onehundred);
+
         await escrow.connect(buyer).lock(merchant.address, onehundred);
         await escrow.connect(buyer).release(merchant.address);
 
         try {
+          mock.transfer.returns(false);
           await escrow.connect(merchant).claim();
           throw new Error("This should not work !");
         } catch (err) {
           expect(err.message).to.eq("VM Exception while processing transaction: reverted with reason string 'Could not transfer merchant's balance'");
         }
-      });
+
+     });
 
 
   })
