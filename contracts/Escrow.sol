@@ -22,7 +22,7 @@ contract Escrow {
     }
 
     function release(address recipient) external {
-        released[recipient] = lockedIn[msg.sender][recipient];
+        released[recipient] += lockedIn[msg.sender][recipient];
         lockedIn[msg.sender][recipient] = 0;
     }
 
