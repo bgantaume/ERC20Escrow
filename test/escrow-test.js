@@ -63,7 +63,7 @@ describe("Escrow", function () {
         await escrow.connect(buyer).lock(merchant.address, ethers.utils.parseEther("1000"));
         throw new Error("This should not work !");
       } catch (err) {
-        expect(err.message).to.eq("VM Exception while processing transaction: reverted with reason string 'Insufficient balance'");
+        expect(err.message).to.eq("VM Exception while processing transaction: reverted with reason string 'ERC20: transfer amount exceeds balance'");
       }
         expect(await escrow.lockedInBalance(buyer.address,merchant.address))
           .to.equal(ethers.utils.parseEther("0"));
@@ -76,7 +76,7 @@ describe("Escrow", function () {
         await escrow.connect(buyer).lock(merchant.address, ethers.utils.parseEther("100"));
         throw new Error("This should not work !");
       } catch (err) {
-        expect(err.message).to.eq("VM Exception while processing transaction: reverted with reason string 'Escrow not authorized'");
+        expect(err.message).to.eq("VM Exception while processing transaction: reverted with reason string 'ERC20: transfer amount exceeds allowance'");
       }
         expect(await escrow.lockedInBalance(buyer.address,merchant.address))
           .to.equal(ethers.utils.parseEther("0"));
@@ -96,7 +96,7 @@ describe("Escrow", function () {
         await escrow.connect(buyer).lock(merchant.address, onehundred);
         throw new Error("This should not work !");
       } catch (err) {
-        expect(err.message).to.eq("VM Exception while processing transaction: reverted with reason string 'Could not tranfer tokens'");
+        expect(err.message).to.eq("VM Exception while processing transaction: reverted with reason string 'SafeERC20: ERC20 operation did not succeed'");
       }
 
    });
@@ -192,7 +192,7 @@ describe("Escrow", function () {
           await escrow.connect(merchant).claim();
           throw new Error("This should not work !");
         } catch (err) {
-          expect(err.message).to.eq("VM Exception while processing transaction: reverted with reason string 'Could not transfer merchant's balance'");
+          expect(err.message).to.eq("VM Exception while processing transaction: reverted with reason string 'SafeERC20: ERC20 operation did not succeed'");
         }
 
      });
